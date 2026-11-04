@@ -16,7 +16,7 @@ async def proizvod():
     return rijeci
 
 async def namjena():
-    print("nesto pocinjem s namjenom")
+    
     await asyncio.sleep(5)
     prehrana = [ "Povrce", "Voce"]
     return prehrana
