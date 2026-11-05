@@ -55,23 +55,42 @@ Health s bazom: `GET /health` → `"db": "connected"`
 
 ## Deploy na Railway
 
-### A) Backend servis
+### Opcija A — Dockerfile (preporuka, bez `npm ci && npm run build`)
 
-1. New Project → **Deploy from GitHub** (repo s `RS1/backend_app`).
-2. Root Directory: `RS1/backend_app` (ili cijeli repo ako je root backend).
-3. **Add PostgreSQL** u isti projekt (Railway → New → Database → PostgreSQL).
-4. Na **backend** servisu → Variables → **Add Reference** → `DATABASE_URL` iz PostgreSQL servisa.
-5. Build Command: `npm install && npm run build`
-6. Start Command: `npm start`
-7. Railway postavlja `PORT` automatski.
+U rootu servisa postoji **`Dockerfile`** i **`railway.toml`**. Railway gradi sliku (`docker build`), ne Nixpacks `npm ci`.
 
-Pri deployu `npm start` pokreće shemu i seed (jednom, kad je jelovnik prazan).
+1. New Project → deploy repo, **Root Directory**: `RS1/backend_app`
+2. Add **PostgreSQL**, poveži **`DATABASE_URL`** na backend servis
+3. Build/start se čitaju iz Dockerfilea; dodatni Build Command u UI **ostavi prazan** ili koristi Dockerfile builder
 
-Javni URL backenda upiši u `url.txt`.
+### Opcija B — Nixpacks (ručno u Railway UI)
 
-### B) Frontend (Render ili Railway Static)
+U **Settings → Build** možeš promijeniti naredbu, npr.:
 
-Postavi `VITE_API_URL` na javni URL Railway backenda, npr. `https://tvoj-backend.up.railway.app`.
+```bash
+npm install && npm run build
+```
+
+`typescript` je u `devDependencies`, pa build mora instalirati dev pakete (ne samo `npm ci --omit=dev`).
+
+Primjer Start Command: `npm start`
+
+### Opcija C — bez compile koraka (brzo, manje uredno)
+
+Start Command:
+
+```bash
+npx tsx src/index.ts
+```
+
+Tada Build Command može biti samo `npm install` ili prazan. Za produkciju je bolje A ili B.
+
+### Zajedničko
+
+1. New Project → deploy repo, root `RS1/backend_app`
+2. **Add PostgreSQL**, varijabla **`DATABASE_URL`** (reference s Postgres servisa)
+3. Railway postavlja **`PORT`** automatski  
+4. Javni URL backenda upiši u `url.txt`; na frontendu **`VITE_API_URL`** = taj URL
 
 ### Test
 
