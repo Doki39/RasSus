@@ -1,6 +1,13 @@
 import cors from "cors";
 import express from "express";
-import { jelovnik, narudzbe } from "./data";
+import {
+  createNarudzba,
+  getJeloById,
+  getJelovnik,
+  getNarudzbe,
+  pingDatabase,
+} from "./db/repository";
+import { setupDatabase } from "./db/setup";
 import type { NovaNarudzba } from "./types";
 
 const app = express();
@@ -13,32 +20,50 @@ app.get("/", (_req, res) => {
   res.json({
     servis: "Restoran RasSus API",
     verzija: "1.0.0",
+    baza: "postgresql",
     rute: ["/health", "/jelovnik", "/jelovnik/:id", "/narudzbe"],
   });
 });
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", vrijeme: new Date().toISOString() });
-});
-
-app.get("/jelovnik", (_req, res) => {
-  res.json(jelovnik);
-});
-
-app.get("/jelovnik/:id", (req, res) => {
-  const jelo = jelovnik.find((stavka) => stavka.id === Number(req.params.id));
-  if (!jelo) {
-    res.status(404).json({ greska: "Stavka nije pronađena." });
-    return;
+app.get("/health", async (_req, res) => {
+  try {
+    await pingDatabase();
+    res.json({ status: "ok", db: "connected", vrijeme: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: "error", db: "disconnected", vrijeme: new Date().toISOString() });
   }
-  res.json(jelo);
 });
 
-app.get("/narudzbe", (_req, res) => {
-  res.json(narudzbe);
+app.get("/jelovnik", async (_req, res) => {
+  try {
+    res.json(await getJelovnik());
+  } catch {
+    res.status(500).json({ greska: "Greška pri dohvaćanju jelovnika." });
+  }
 });
 
-app.post("/narudzbe", (req, res) => {
+app.get("/jelovnik/:id", async (req, res) => {
+  try {
+    const jelo = await getJeloById(Number(req.params.id));
+    if (!jelo) {
+      res.status(404).json({ greska: "Stavka nije pronađena." });
+      return;
+    }
+    res.json(jelo);
+  } catch {
+    res.status(500).json({ greska: "Greška pri dohvaćanju stavke." });
+  }
+});
+
+app.get("/narudzbe", async (_req, res) => {
+  try {
+    res.json(await getNarudzbe());
+  } catch {
+    res.status(500).json({ greska: "Greška pri dohvaćanju narudžbi." });
+  }
+});
+
+app.post("/narudzbe", async (req, res) => {
   const tijelo = req.body as NovaNarudzba;
   const imeStola = tijelo.ime_stola?.trim();
 
@@ -47,40 +72,26 @@ app.post("/narudzbe", (req, res) => {
     return;
   }
 
-  const stavke = tijelo.stavke
-    .filter((s) => Number(s.kolicina) > 0)
-    .map((s) => {
-      const jelo = jelovnik.find((stavka) => stavka.id === Number(s.jeloId));
-      if (!jelo) {
-        return null;
-      }
-      const kolicina = Number(s.kolicina);
-      return {
-        jeloId: jelo.id,
-        naziv: jelo.naziv,
-        kolicina,
-        cijena: jelo.cijena,
-        ukupno: jelo.cijena * kolicina,
-      };
-    })
-    .filter((s): s is NonNullable<typeof s> => s !== null);
-
-  if (stavke.length === 0) {
-    res.status(400).json({ greska: "Odaberi barem jednu stavku." });
-    return;
+  try {
+    const narudzba = await createNarudzba({ ime_stola: imeStola, stavke: tijelo.stavke });
+    if (!narudzba) {
+      res.status(400).json({ greska: "Odaberi barem jednu stavku." });
+      return;
+    }
+    res.status(201).json(narudzba);
+  } catch {
+    res.status(500).json({ greska: "Greška pri spremanju narudžbe." });
   }
-
-  const narudzba = {
-    id: narudzbe.length + 1,
-    ime_stola: imeStola,
-    stavke,
-    ukupno: stavke.reduce((sum, s) => sum + s.ukupno, 0),
-  };
-
-  narudzbe.push(narudzba);
-  res.status(201).json(narudzba);
 });
 
-app.listen(port, () => {
-  console.log(`API sluša na portu ${port}`);
+async function start() {
+  await setupDatabase();
+  app.listen(port, () => {
+    console.log(`API sluša na portu ${port}`);
+  });
+}
+
+start().catch((error) => {
+  console.error(error);
+  process.exit(1);
 });
