@@ -1,0 +1,18 @@
+:root {
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.45;
+  color: #d8d0c4;
+  background: #12100c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100svh;
+}

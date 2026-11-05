@@ -1,0 +1,1 @@
+Dodaj javni HTTPS URL frontenda s Rendera (npr. https://rs1-frontend.onrender.com).

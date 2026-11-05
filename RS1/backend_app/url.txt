@@ -1,0 +1,1 @@
+Dodaj javni HTTPS URL backend servisa s Rendera (npr. https://rs1-backend.onrender.com).
