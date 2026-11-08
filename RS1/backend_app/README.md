@@ -2,6 +2,16 @@
 
 REST API za vježbu 1: jelovnik i narudžbe u **PostgreSQL** bazi.
 
+## Frontend (deploy)
+
+Javni URL frontenda zapisuje se u **`RS1/frontend_app/url.txt`** (sibling direktorij u odnosu na ovaj backend).
+
+Trenutni deploy:
+
+- https://frontend-production-6e2b.up.railway.app/
+
+Frontend mora imati env varijablu **`VITE_API_URL`** postavljenu na javni URL **ovog** backenda.
+
 ## Lokalno
 
 ### 1. PostgreSQL
